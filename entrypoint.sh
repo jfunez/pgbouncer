@@ -6,6 +6,7 @@ POSTGRES_HOST=${POSTGRES_HOST:-}
 POSTGRES_PORT=${POSTGRES_PORT:-}
 POSTGRES_USER=${POSTGRES_USER:-}
 POSTGRES_PASS=${POSTGRES_PASS:-}
+PGBOUNCER_AUTH_TYPE=${PGBOUNCER_AUTH_TYPE:-}
 PGBOUNCER_MAX_CLIENT_CONN=${PGBOUNCER_MAX_CLIENT_CONN:-}
 PGBOUNCER_DEFAULT_POOL_SIZE=${PGBOUNCER_DEFAULT_POOL_SIZE:-}
 PGBOUNCER_SERVER_IDLE_TIMEOUT=${PGBOUNCER_SERVER_IDLE_TIMEOUT:-}
@@ -14,6 +15,7 @@ if [ -f /etc/pgbouncer/pgbconf.ini ]
 then
     echo "file: /etc/pgbouncer/pgbconf.ini already exists... continue"
 else
+    echo "Creating a new file from env vars: /etc/pgbouncer/pgbconf.ini"
     cat << EOF > /etc/pgbouncer/pgbconf.ini
 [databases]
 * = host=${POSTGRES_HOST} port=${POSTGRES_PORT}
@@ -21,11 +23,10 @@ else
 [pgbouncer]
 logfile = /var/log/pgbouncer/pgbouncer.log
 pidfile = /var/run/pgbouncer/pgbouncer.pid
-;listen_addr = *
 listen_addr = 0.0.0.0
 listen_port = 6432
 unix_socket_dir = /var/run/pgbouncer
-auth_type = trust
+auth_type = ${PGBOUNCER_AUTH_TYPE}
 auth_file = /etc/pgbouncer/userlist.txt
 pool_mode = session
 server_reset_query = DISCARD ALL
@@ -36,8 +37,10 @@ server_idle_timeout = ${PGBOUNCER_SERVER_IDLE_TIMEOUT}
 EOF
 fi
 
-if [ ! -s /etc/pgbouncer/userlist.txt ]
+if [-s /etc/pgbouncer/userlist.txt ]
 then
+    echo "file: /etc/pgbouncer/userlist.txt already exists... continue"
+else
     echo '"'"${POSTGRES_USER}"'" "'"${POSTGRES_PASS}"'"'  > /etc/pgbouncer/userlist.txt
 fi
 
